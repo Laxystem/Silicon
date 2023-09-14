@@ -2,20 +2,21 @@
 	"schema_version": 1,
 	"quilt_loader": {
 		"group": "quest.laxla",
-		"id": "silicon",
+		"id": "silica",
 		"version": "${version}",
 		"metadata": {
-			"name": "Silicon",
-			"description": "A short description of your mod.",
+			"name": "Silica",
+			"description": "Default blocksets for Silicon",
 			"contributors": {
-				"Laxystem": "Author"
+				"Laxystem": "Developer",
+				"Vector": "Artist"
 			},
 			"contact": {
 				"homepage": "https://silicon.laxla.quest/",
 				"issues": "https://github.com/LaylaMeower/Silicon/issues",
 				"sources": "https://github.com/LaylaMeower/Silicon"
 			},
-			"icon": "assets/silicon/icon.png",
+			"icon": "assets/silica/icon.png",
 			"license": {
 				"id": "MPL-2.0",
 				"name": "Mozilla Public License 2.0",
@@ -26,7 +27,7 @@
 		"entrypoints": {
 			"init": {
 				"adapter": "kotlin",
-				"value": "quest.laxla.silicon.Silicon"
+				"value": "quest.laxla.silicon.silica.Silica"
 			}
 		},
 		"depends": [
@@ -47,9 +48,5 @@
 				"versions": ">=1.20"
 			}
 		]
-	},
-	"mixin": "silicon.mixins.json",
-	"quilt_loom": {
-		"injected_interfaces": { }
 	}
 }

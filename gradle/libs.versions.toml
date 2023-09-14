@@ -1,25 +1,27 @@
 [versions]
 kotlin = "1.8.22"
 
+collections_immutable = "0.3.5"
 minecraft = "1.20.1"
 qfapi = "7.0.3+0.83.1-1.20.1"
 qkl = "2.1.0+kt.1.8.22+flk.1.9.4"
 loader = "0.19.1"
 mappings = "1.20.1+build.1"
 loom = "1.2.3"
+kotlin_logging = "5.1.0"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
-qfapi = { module = "org.quiltmc.quilted-fabric-api:quilted-fabric-api", version.ref = "qfapi" }
-qfapi_deprecated = { module = "org.quiltmc.quilted-fabric-api:quilted-fabric-api-deprecated", version.ref = "qfapi" }
 
-
-qkl = { module = "org.quiltmc.quilt-kotlin-libraries:quilt-kotlin-libraries", version.ref = "qkl" }
 quilt_loader = { module = "org.quiltmc:quilt-loader", version.ref = "loader" }
 quilt_mappings = { module = "org.quiltmc:quilt-mappings", version.ref = "mappings" }
 
-[bundles]
-quilted_fabric_api = ["qfapi", "qfapi_deprecated"]
+quilt_standard = { module = "org.quiltmc.quilted-fabric-api:quilted-fabric-api", version.ref = "qfapi" }
+quilt_deprecated = { module = "org.quiltmc.quilted-fabric-api:quilted-fabric-api-deprecated", version.ref = "qfapi" }
+quilt_kotlin = { module = "org.quiltmc.quilt-kotlin-libraries:quilt-kotlin-libraries", version.ref = "qkl" }
+
+logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin_logging" }
+collections_immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "collections_immutable" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

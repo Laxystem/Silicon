@@ -15,6 +15,7 @@ val archives_base_name: String by project
 base.archivesName.set(archives_base_name)
 
 val javaVersion = 17
+val charset = "UTF-8"
 
 repositories {
 	// Add repositories to retrieve artifacts from in here.
@@ -24,8 +25,24 @@ repositories {
 	// for more information about repositories.
 }
 
-// All the dependencies are declared at gradle/libs.version.toml and referenced with "libs.<id>"
-// See https://docs.gradle.org/current/userguide/platforms.html for information on how version catalogs work.
+val silicon: SourceSet by sourceSets.main
+
+tasks.withType<KotlinCompile>()
+	.getByName(silicon.getCompileTaskName("kotlin"))
+	.compilerOptions
+	.freeCompilerArgs
+	.add("-Xexplicit-api=strict")
+
+val silica: SourceSet by sourceSets.creating {
+	compileClasspath += silicon.compileClasspath
+	runtimeClasspath += silicon.runtimeClasspath
+}
+
+fun DependencyHandlerScope.includeApi(dependency: Any) {
+	include(dependency)
+	api(dependency)
+}
+
 dependencies {
 	minecraft(libs.minecraft)
 	mappings(
@@ -34,25 +51,15 @@ dependencies {
 		}
 	)
 
-	// Replace the above line with the block below if you want to use Mojang mappings as your primary mappings, falling back on QM for parameters and Javadocs
-	/*
-	mappings(
-		loom.layered {
-			mappings(variantOf(libs.quilt.mappings) { classifier("intermediary-v2") })
-			officialMojangMappings()
-		}
-	)
-	*/
-
 	modImplementation(libs.quilt.loader)
+	modImplementation(libs.quilt.standard)
+	// modImplementation(libs.quilt.deprecated)
+	modImplementation(libs.quilt.kotlin)
 
+	includeApi(libs.logging)
+	includeApi(libs.collections.immutable)
 
-	// QSL is not a complete API; You will need Quilted Fabric API to fill in the gaps.
-	// Quilted Fabric API will automatically pull in the correct QSL version.
-	modImplementation(libs.qfapi)
-	// modImplementation(libs.bundles.qfapi) // If you wish to use the deprecated Fabric API modules
-
-	modImplementation(libs.qkl)
+	"${silica.name}Implementation"(silicon.output)
 }
 
 tasks {
@@ -65,13 +72,29 @@ tasks {
 	}
 
 	withType<JavaCompile>.configureEach {
-		options.encoding = "UTF-8"
+		options.encoding = charset
 		options.isDeprecation = true
 		options.release.set(javaVersion)
 	}
 
+	sequenceOf(silica, silicon)
+		.map { getByName(it.processResourcesTaskName) }
+		.filterIsInstance<ProcessResources>()
+		.forEach {
+			it.filteringCharset = charset
+			it.inputs.property("version", project.version)
+
+			it.filesMatching("quilt.mod.json") {
+				expand(
+					mapOf(
+						"version" to project.version
+					)
+				)
+			}
+		}
+
 	processResources {
-		filteringCharset = "UTF-8"
+		filteringCharset = charset
 		inputs.property("version", project.version)
 
 		filesMatching("quilt.mod.json") {
@@ -84,23 +107,22 @@ tasks {
 	}
 
 	javadoc {
-		options.encoding = "UTF-8"
+		options.encoding = charset
 	}
 
-	// Run `./gradlew wrapper --gradle-version <newVersion>` or `gradle wrapper --gradle-version <newVersion>` to update gradle scripts
-	// BIN distribution should be sufficient for the majority of mods
+	// ./gradlew wrapper --gradle-version
 	wrapper {
 		distributionType = Wrapper.DistributionType.BIN
 	}
 
 	jar {
-		from("LICENSE") {
-			rename { "LICENSE_${archives_base_name}" }
+		from("LICENSE.md") {
+			rename { "LICENSE_${archives_base_name}.md" }
 		}
 	}
 }
 
-val targetJavaVersion = JavaVersion.toVersion(javaVersion)
+val targetJavaVersion: JavaVersion = JavaVersion.toVersion(javaVersion)
 if (JavaVersion.current() < targetJavaVersion) {
 	kotlin.jvmToolchain(javaVersion)
 
@@ -110,15 +132,9 @@ if (JavaVersion.current() < targetJavaVersion) {
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task if it is present.
-	// If you remove this line, sources will not be generated.
 	withSourcesJar()
+	withJavadocJar()
 
-	// If this mod is going to be a library, then it should also generate Javadocs in order to aid with development.
-	// Uncomment this line to generate them.
-	// withJavadocJar()
-
-	// Still required by IDEs such as Eclipse and VSC
 	sourceCompatibility = targetJavaVersion
 	targetCompatibility = targetJavaVersion
 }
@@ -132,10 +148,6 @@ publishing {
 	}
 
 	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+	repositories { }
 }
+
