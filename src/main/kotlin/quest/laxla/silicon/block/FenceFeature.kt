@@ -1,9 +1,13 @@
 package quest.laxla.silicon.block
 
+import net.minecraft.block.Block
 import net.minecraft.block.FenceBlock
 import net.minecraft.registry.Registries
 import quest.laxla.silicon.Feature
-import quest.laxla.silicon.Fence
-import quest.laxla.silicon.reference
+import quest.laxla.silicon.FeatureGenerator
+import quest.laxla.silicon.generator
 
-public object FenceFeature : Feature<FenceBlock> by reference(Registries.BLOCK, subtag = Fence)
+public object FenceFeature : Feature<FenceBlock> by blockFeature(Registries.BLOCK),
+    FeatureGenerator<Block, FenceBlock> by Feature generator {
+        FenceBlock(it.blockSettings.solid())
+    }

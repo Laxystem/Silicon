@@ -7,10 +7,10 @@ import kotlin.reflect.KProperty
 @Language.Api(Language.Kotlin, violationResult = Language.ViolationResult.BadPerformance)
 public value class FeatureDelegate<T : Feature<*>> internal constructor(
     public val feature: T
-) : ReadOnlyProperty<DynamicFeature<*>, T> {
+) : ReadOnlyProperty<Feature<*>, T> {
 
     @Language.Api(Language.Kotlin)
-    override fun getValue(thisRef: DynamicFeature<*>, property: KProperty<*>): T = feature.also {
+    override fun getValue(thisRef: Feature<*>, property: KProperty<*>): T = feature.also {
         thisRef += it
     }
 }

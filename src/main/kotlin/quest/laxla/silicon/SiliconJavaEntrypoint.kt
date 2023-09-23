@@ -5,5 +5,5 @@ import org.slf4j.Logger
 
 @Language.Api(Language.Java)
 public interface SiliconJavaEntrypoint {
-    public operator fun invoke(logger: Logger, mod: ModContainer)
+    public fun onInitialize(logger: Logger, mod: ModContainer)
 }

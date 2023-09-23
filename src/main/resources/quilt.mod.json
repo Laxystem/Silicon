@@ -49,6 +49,7 @@
 		]
 	},
 	"mixin": "silicon.mixins.json",
+	"access_widener": "silicon.accesswidener",
 	"quilt_loom": {
 		"injected_interfaces": { }
 	}
