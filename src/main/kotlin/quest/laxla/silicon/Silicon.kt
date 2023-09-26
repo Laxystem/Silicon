@@ -61,7 +61,7 @@ public object Silicon : ModInitializer, NamespaceProvider, SiliconKotlinEntrypoi
      * @author Laxystem
      * @since 0.0.1-alpha
      */
-    public lateinit var contents: ImmutableMap<Registry<*>, ImmutableMap<Identifier, ImmutableList<Identifier>>>
+    public lateinit var staticTags: ImmutableMap<Registry<*>, ImmutableMap<Identifier, ImmutableList<Identifier>>>
 
     private val resourceLoader by lazy { ResourceLoader.get(ResourceType.SERVER_DATA) }
 
@@ -129,81 +129,10 @@ public object Silicon : ModInitializer, NamespaceProvider, SiliconKotlinEntrypoi
         }
 
         isFrozen = false
-
-        val dependencies = mutableListOf<ModContainer>()
-
-        EntrypointUtil.invoke(
-            Language.Kotlin.initEntrypointName,
-            SiliconKotlinEntrypoint::class.java
-        ) { entrypoint, dependencyMod ->
-            val modID = dependencyMod.metadata().id()
-            with(entrypoint) {
-                val logger = KotlinLogging.logger("$namespace/$modID")
-
-                logger.debug { Language.Kotlin.initLogOutput }
-
-                NamespaceProvider.StringWrapper(modID).onInitialize(logger, dependencyMod)
-            }
-
-            dependencies += dependencyMod
-        }
-
-        EntrypointUtil.invoke(
-            Language.Java.initEntrypointName,
-            SiliconJavaEntrypoint::class.java
-        ) { entrypoint, dependencyMod ->
-            if (silicon in dependencies) logger.warn {
-                "Skipping ${Language.Java.name} entrypoint of mod [${dependencyMod.metadata().name()}], " +
-                    "namespace [${
-                        dependencyMod.metadata().id()
-                    }], as it also declares a ${Language.Kotlin.name} entrypoint. "
-            } else {
-                entrypoint.onInitialize(
-                    LoggerFactory.getLogger(namespace + '/' + dependencyMod.metadata().id())
-                        .also { it.debug(Language.Java.initLogOutput) },
-                    dependencyMod
-                )
-
-                dependencies += dependencyMod
-            }
-        }
-
-        this.dependencies = dependencies.toImmutableList()
+        dependencies = invokeEntrypoints()
         isFrozen = true
 
-        val tags = mutableMapOf<Registry<*>, MutableMap<Identifier, MutableList<TagEntry>>>()
-
-        val modResourceManager = MultiPackResourceManager(ResourceType.SERVER_DATA, QuiltLoader.getAllMods().map {
-            resourceLoader.newFileSystemResourcePack(
-                "static/mod/" + it.metadata().id() at this, // for example_mod, silicon:static/mod/example_mod
-                silicon,
-                it.rootPath(),
-                ResourcePackActivationType.ALWAYS_ENABLED // well, we never really register it sooooo
-            )
-        })
-
-
-        Registries.REGISTRY.forEach { registry ->
-            val tagList = tags.computeIfAbsent(registry) { mutableMapOf() }
-
-            loadTags(tagList, modResourceManager, registry.key, allowReplacing = false)
-            // todo datapack resource manager that allows replacing
-        }
-
-
-        val flattenedTags = mutableMapOf<Registry<*>, MutableMap<Identifier, ImmutableList<Identifier>>>()
-
-        tags.forEach { (registry, tagMap) ->
-            val flattenedTagMap = flattenedTags.computeIfAbsent(registry) { mutableMapOf() }
-
-            tagMap.forEach { (identifier, contents) ->
-                flattenedTagMap[identifier] = contents.asSequence().flatMap {
-                    flattenedTagMap.unwrap(it, tagMap)
-                }.toImmutableList()
-            }
-        }
-
-        this.contents = flattenedTags.asSequence().map { (registry, tags) -> registry to tags.toImmutableMap() }.toMap().toImmutableMap()
+        staticTags = loadStaticData()
 
         isCommonInitialized = true
     }
@@ -229,6 +158,48 @@ public object Silicon : ModInitializer, NamespaceProvider, SiliconKotlinEntrypoi
             logger.error { "$name has crashed! Visit debug.log for more info." }
             error("$name's namespace [$namespace] or name!\n Please only download $name from modrinth [$modrinth] and github [$github]!")
         }
+    }
+
+    private fun invokeEntrypoints(): ImmutableList<ModContainer> {
+        val dependencies = mutableListOf<ModContainer>()
+
+        EntrypointUtil.invoke(
+            Language.Kotlin.initEntrypointName,
+            SiliconKotlinEntrypoint::class.java
+        ) { entrypoint, dependencyMod ->
+            val modID = dependencyMod.metadata().id()
+            with(entrypoint) {
+                val logger = KotlinLogging.logger("$namespace/$modID")
+
+                logger.debug { Language.Kotlin.initLogOutput }
+
+                NamespaceProvider.StringWrapper(modID).onInitialize(logger, dependencyMod)
+            }
+
+            dependencies += dependencyMod
+        }
+
+        EntrypointUtil.invoke(
+            Language.Java.initEntrypointName,
+            SiliconJavaEntrypoint::class.java
+        ) { entrypoint, dependencyMod ->
+            if (dependencyMod in dependencies) logger.warn {
+                "Skipping ${Language.Java.name} entrypoint of mod [${dependencyMod.metadata().name()}], " +
+                    "namespace [${
+                        dependencyMod.metadata().id()
+                    }], as it also declares a ${Language.Kotlin.name} entrypoint. "
+            } else {
+                entrypoint.onInitialize(
+                    LoggerFactory.getLogger(namespace + '/' + dependencyMod.metadata().id())
+                        .also { it.debug(Language.Java.initLogOutput) },
+                    dependencyMod
+                )
+
+                dependencies += dependencyMod
+            }
+        }
+
+        return dependencies.toImmutableList()
     }
 
     /**
@@ -267,6 +238,41 @@ public object Silicon : ModInitializer, NamespaceProvider, SiliconKotlinEntrypoi
         GeneratorRegistry[Wall at this] = WallFeature
 
         GeneratorRegistry[BlockItem at this] = BlockItemFeature
+    }
+
+    private fun loadStaticData(): ImmutableMap<Registry<*>, ImmutableMap<Identifier, ImmutableList<Identifier>>> {
+        val tags = mutableMapOf<Registry<*>, MutableMap<Identifier, MutableList<TagEntry>>>()
+
+        val modResourceManager = MultiPackResourceManager(ResourceType.SERVER_DATA, QuiltLoader.getAllMods().map {
+            resourceLoader.newFileSystemResourcePack(
+                "static/mod/" + it.metadata().id() at this, // for example_mod, silicon:static/mod/example_mod
+                it, // todo: what is this used for? Should the mod be the owner, or silicon?
+                it.rootPath(),
+                ResourcePackActivationType.ALWAYS_ENABLED // well, we never really register it sooooo
+            )
+        })
+
+
+        Registries.REGISTRY.forEach { registry ->
+            val tagList = tags.computeIfAbsent(registry) { mutableMapOf() }
+
+            loadTags(tagList, modResourceManager, registry.key, allowReplacing = false)
+            // todo datapack resource manager that allows replacing
+        }
+
+        val flattenedTags = mutableMapOf<Registry<*>, MutableMap<Identifier, ImmutableList<Identifier>>>()
+
+        tags.forEach { (registry, tagMap) ->
+            val flattenedTagMap = flattenedTags.computeIfAbsent(registry) { mutableMapOf() }
+
+            tagMap.forEach { (identifier, contents) ->
+                flattenedTagMap[identifier] = contents.asSequence().flatMap {
+                    flattenedTagMap.unwrap(it, tagMap)
+                }.toImmutableList()
+            }
+        }
+
+        return flattenedTags.asSequence().map { (registry, tags) -> registry to tags.toImmutableMap() }.toMap().toImmutableMap()
     }
 
     @Suppress("SameParameterValue") // todo: add replacement-allowing ways to load static tags
