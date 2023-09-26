@@ -4,8 +4,11 @@ package quest.laxla.silicon
 
 import net.minecraft.registry.Registry
 import net.minecraft.registry.RegistryKey
+import net.minecraft.registry.tag.TagEntry
 import net.minecraft.registry.tag.TagKey
 import net.minecraft.util.Identifier
+import net.minecraft.util.SystemDetails
+import quest.laxla.silicon.mixin.TagEntryMixin
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
@@ -170,3 +173,35 @@ public inline infix fun <reified Base : Any, reified Output : Any> Feature.Compa
 public operator fun <T> Registry<in T>.set(identifier: Identifier, entry: T): T =
     Registry.register(this, identifier, entry)
 
+/**
+ * Flattens a [map][Map] of [map][Map]s of [iterable][Iterable]s into a [Sequence] of [Triple]s.
+ *
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ */
+@Language.Api(Language.Kotlin)
+public fun <A, B, C> Sequence<Map.Entry<A, Map<B, Iterable<C>>>>.flatten(): Sequence<Triple<A, B, C>> = flatMap { (key, entry) ->
+    entry.asSequence().flatMap {
+        it.value.asSequence().map { value ->
+            Triple(key, it.key, value)
+        }
+    }
+}
+
+internal operator fun SystemDetails.plusAssign(property: KProperty<*>) = addSection("${Silicon.name}.${property.name}") { property.getter.call().toString() }
+
+/**
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ * @see TagEntry.id
+ */
+@Language.Api(Language.Kotlin)
+public val TagEntry.id: Identifier get() = (this as TagEntryMixin).id
+
+/**
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ * @see TagEntry.isTag
+ */
+@Language.Api(Language.Kotlin)
+public val TagEntry.isTag: Boolean get() = (this as TagEntryMixin).isTag

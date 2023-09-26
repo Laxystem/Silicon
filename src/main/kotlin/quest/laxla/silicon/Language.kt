@@ -1,5 +1,7 @@
 package quest.laxla.silicon
 
+import org.quiltmc.qsl.base.api.entrypoint.ModInitializer
+
 public enum class Language {
     /**
      * This API was made specifically for Java.
@@ -25,6 +27,9 @@ public enum class Language {
      * This API contains no language-specific features (for example, generics), and should work on any JVM language.
      */
     BytecodeLol;
+
+    internal val initEntrypointName = "${Silicon.namespace}/${ModInitializer.ENTRYPOINT_KEY}/$name"
+    internal val initLogOutput = "<$name> Registering ${Silicon.name} features & generators..."
 
     public enum class ViolationResult {
         CursedCode, BadPerformance, MysteriousExceptions, WontCompile
