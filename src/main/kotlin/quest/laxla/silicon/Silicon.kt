@@ -209,24 +209,6 @@ public object Silicon : ModInitializer, NamespaceProvider, SiliconKotlinEntrypoi
     }
 
     /**
-     * Unwraps [tagEntry] into the receiver, using data from [tagMap].
-     *
-     * This function is lazy - it'll only execute once if called multiple times with the same data.
-     *
-     * @author Laxystem
-     * @since 0.0.1-alpha
-     */
-    private fun MutableMap<Identifier, ImmutableList<Identifier>>.unwrap(
-        tagEntry: TagEntry,
-        tagMap: Map<Identifier, List<TagEntry>>
-    ): Sequence<Identifier> = this[tagEntry.id]?.asSequence() ?: if (tagEntry.isTag) tagMap[tagEntry.id]!!
-        .asSequence()
-        .flatMap { unwrap(it, tagMap) }
-        .toImmutableList().also { this[tagEntry.id] = it }
-        .asSequence()
-    else sequenceOf(tagEntry.id)
-
-    /**
      * Verifies silicon metadata, and throws an exception if invalidated.
      *
      * @author Laxystem
@@ -336,4 +318,22 @@ public object Silicon : ModInitializer, NamespaceProvider, SiliconKotlinEntrypoi
     } catch (e: Exception) {
         logger.error(e) { "Failed to read tag [$resourceIdentifier] from [${resource.sourceName} (located at [$resourceLocation])" }
     }
+
+    /**
+     * Unwraps [tagEntry] into the receiver, using data from [tagMap].
+     *
+     * This function is lazy - it'll only execute once if called multiple times with the same data.
+     *
+     * @author Laxystem
+     * @since 0.0.1-alpha
+     */
+    private fun MutableMap<Identifier, ImmutableList<Identifier>>.unwrap(
+        tagEntry: TagEntry,
+        tagMap: Map<Identifier, List<TagEntry>>
+    ): Sequence<Identifier> = this[tagEntry.id]?.asSequence() ?: if (tagEntry.isTag) tagMap[tagEntry.id]!!
+        .asSequence()
+        .flatMap { unwrap(it, tagMap) }
+        .toImmutableList().also { this[tagEntry.id] = it }
+        .asSequence()
+    else sequenceOf(tagEntry.id)
 }
