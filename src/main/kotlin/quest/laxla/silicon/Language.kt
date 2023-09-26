@@ -28,7 +28,9 @@ public enum class Language {
      */
     BytecodeLol;
 
-    internal val initEntrypointName = "${Silicon.namespace}/${ModInitializer.ENTRYPOINT_KEY}/$name"
+    public val lowercaseName: String = name.lowercase()
+
+    internal val initEntrypointName = "${Silicon.namespace}/${ModInitializer.ENTRYPOINT_KEY}/$lowercaseName"
     internal val initLogOutput = "<$name> Registering ${Silicon.name} features & generators..."
 
     public enum class ViolationResult {

@@ -180,23 +180,25 @@ public operator fun <T> Registry<in T>.set(identifier: Identifier, entry: T): T 
  * @since 0.0.1-alpha
  */
 @Language.Api(Language.Kotlin)
-public fun <A, B, C> Sequence<Map.Entry<A, Map<B, Iterable<C>>>>.flatten(): Sequence<Triple<A, B, C>> = flatMap { (key, entry) ->
-    entry.asSequence().flatMap {
-        it.value.asSequence().map { value ->
-            Triple(key, it.key, value)
+public fun <A, B, C> Sequence<Map.Entry<A, Map<B, Iterable<C>>>>.flatten(): Sequence<Triple<A, B, C>> =
+    flatMap { (key, entry) ->
+        entry.asSequence().flatMap {
+            it.value.asSequence().map { value ->
+                Triple(key, it.key, value)
+            }
         }
     }
-}
 
-internal operator fun SystemDetails.plusAssign(property: KProperty<*>) = addSection("${Silicon.name}.${property.name}") { property.getter.call().toString() }
+internal operator fun SystemDetails.plusAssign(property: KProperty<*>) =
+    addSection("${Silicon.name}.${property.name}") { property.getter.call().toString() }
 
 /**
  * @author Laxystem
  * @since 0.0.1-alpha
- * @see TagEntry.id
+ * @see TagEntry.identifier
  */
 @Language.Api(Language.Kotlin)
-public val TagEntry.id: Identifier get() = (this as TagEntryMixin).id
+public val TagEntry.identifier: Identifier get() = (this as TagEntryMixin).id
 
 /**
  * @author Laxystem
@@ -205,3 +207,40 @@ public val TagEntry.id: Identifier get() = (this as TagEntryMixin).id
  */
 @Language.Api(Language.Kotlin)
 public val TagEntry.isTag: Boolean get() = (this as TagEntryMixin).isTag
+
+/**
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ */
+@Suppress("UNCHECKED_CAST")
+@Throws(ClassCastException::class)
+@Language.Api(Language.Java)
+public fun <Base : Any, T : Any> Sequence<FeatureGenerator<*, T>>.filterSupportsInput(input: Class<out Base>): Sequence<FeatureGenerator<Base, T>> =
+    filter { it.base.java.isAssignableFrom(input) }.mapNotNull { it as? FeatureGenerator<Base, T> }
+
+/**
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ */
+@Throws(ClassCastException::class)
+@Language.Api(Language.Kotlin)
+public fun <Base : Any, T : Any> Sequence<FeatureGenerator<*, T>>.filterSupportsInput(input: KClass<out Base>): Sequence<FeatureGenerator<Base, T>> =
+    filterSupportsInput(input.java)
+
+/**
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ */
+@Throws(ClassCastException::class)
+@Language.Api(Language.Kotlin, violationResult = Language.ViolationResult.WontCompile)
+@JvmName("__filterSupportsInput")
+public inline fun <reified Base : Any, T : Any> Sequence<FeatureGenerator<*, T>>.filterSupportsInput(): Sequence<FeatureGenerator<Base, T>> =
+    filterSupportsInput(Base::class)
+
+/**
+ * @author Laxystem
+ * @since 0.0.1-alpha
+ */
+@Throws(ClassCastException::class)
+public fun <Base : Any, T : Any> Sequence<FeatureGenerator<*, T>>.filterSupportsInput(base: Base): Sequence<FeatureGenerator<Base, T>> =
+    filterSupportsInput(base::class)

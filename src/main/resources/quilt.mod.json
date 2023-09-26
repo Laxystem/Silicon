@@ -27,6 +27,10 @@
 			"init": {
 				"adapter": "kotlin",
 				"value": "quest.laxla.silicon.Silicon"
+			},
+			"silicon/init/kotlin": {
+				"adapter": "kotlin",
+				"value": "quest.laxla.silicon.Silicon"
 			}
 		},
 		"depends": [
@@ -51,6 +55,6 @@
 	"mixin": "silicon.mixins.json",
 	"access_widener": "silicon.accesswidener",
 	"quilt_loom": {
-		"injected_interfaces": { }
+		"injected_interfaces": {}
 	}
 }

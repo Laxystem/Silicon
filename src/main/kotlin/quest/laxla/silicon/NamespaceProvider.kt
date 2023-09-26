@@ -1,5 +1,7 @@
 package quest.laxla.silicon
 
+import org.quiltmc.loader.api.ModContainer
+
 /**
  * @author Laxystem
  */
@@ -11,11 +13,14 @@ public interface NamespaceProvider {
     public val namespace: String
 
     /**
-     * The default [NamespaceProvider] implementation, wrapping a string.
+     * The default [NamespaceProvider] implementation, wrapping a [ModContainer].
      *
      * @author Laxystem
      */
     @JvmInline
     @Language.Api(Language.Kotlin, violationResult = Language.ViolationResult.BadPerformance)
-    public value class StringWrapper(override val namespace: String) : NamespaceProvider
+    public value class Mod(public val mod: ModContainer) : NamespaceProvider {
+        override val namespace: String
+            get() = mod.metadata().id()
+    }
 }
